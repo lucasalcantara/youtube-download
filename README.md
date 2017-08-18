@@ -1,2 +1,0 @@
-#Requirements
-Install ffmpeg 
