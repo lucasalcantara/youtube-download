@@ -1,1 +1,2 @@
-Have to install ffmpeg 
+#Requirements
+Install ffmpeg 
