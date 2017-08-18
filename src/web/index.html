@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Bare - Start Bootstrap Template</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+     <!-- Custom styles for this template -->
+    <style>
+        body {
+            padding-top: 54px;
+        }
+
+        @media (min-width: 992px) {
+            body {
+                padding-top: 56px;
+            }
+        }
+
+        .loader {
+          border: 16px solid #f3f3f3;
+          border-radius: 50%;
+          border-top: 16px solid #3498db;
+          width: 60px;
+          height: 60px;
+          -webkit-animation: spin 2s linear infinite;
+          animation: spin 2s linear infinite;
+        }
+
+        @-webkit-keyframes spin {
+          0% { -webkit-transform: rotate(0deg); }
+          100% { -webkit-transform: rotate(360deg); }
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- Page Content -->
+    <div class="container">
+        <div class="row">
+            <div class="panel panel-default col-lg-6 text-center">
+                
+                <div class="panel-body">
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a data-toggle="tab" href="download">Video</a></li>
+                        <li><a data-toggle="tab" href="#download">Playlist</a></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div id="download" class="tab-pane fade in active">
+                            <br>
+                            URL: <input type="text" id="url" name="url"/><br>
+                            Format: 
+                            <input type="radio" name="format" value="MP4"> MP4
+                            <input type="radio" name="format" value="MP3"> MP3<br><br>
+                            <button id="submit" type="button" class="btn btn-primary">Download</button>
+                        </div>
+                        <br>
+                        <br>
+                        <div id="loader" style="display: none;" class="loader center-block"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/popper/popper.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="js/page.js"></script>
+
+</body>
+
+</html>
