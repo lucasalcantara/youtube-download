@@ -14,27 +14,53 @@ const (
 	youtubeUrl = "https://www.youtube.com/watch?v="
 )
 
-var wg sync.WaitGroup
-
-func DownloadMP3(url string) {
+func DownloadMP3(urls []string) {
 	stream := stream{}
-	stream.DownloadMP3(url)
+	concurrentlyDownloadStream(urls, "", stream.DownloadMP3)
 }
 
-func DownloadVideo(url string) {
+func DownloadVideo(urls []string) {
 	stream := stream{}
-	stream.DownloadVideo(url, "")
+	concurrentlyDownloadStream(urls, "", stream.DownloadVideo)
 }
 
-func DownloadPlaylistVideos(url string) {
-	downloadPlaylist(url, DownloadVideo)
+func concurrentlyDownloadStream(urls []string, customOutput string, streamFunc func(string, string)) {
+	var wg sync.WaitGroup
+	wg.Add(len(urls))
+
+	for _, url := range urls {
+		go func(url string, customOutput string, streamFunc func(string, string)) {
+			streamFunc(url, customOutput)
+			wg.Done()
+		}(url, customOutput, streamFunc)
+	}
+
+	wg.Wait()
 }
 
-func DownloadPlaylistMusics(url string) {
-	downloadPlaylist(url, DownloadMP3)
+func DownloadPlaylistVideos(urls []string) {
+	concurrentlyDownloadPlaylist(urls, DownloadVideo)
 }
 
-func downloadPlaylist(url string, downloadFunc func(url string)) {
+func DownloadPlaylistMusics(urls []string) {
+	concurrentlyDownloadPlaylist(urls, DownloadMP3)
+}
+
+func concurrentlyDownloadPlaylist(urls []string, downloadFunc func(urls []string)) {
+	var wg sync.WaitGroup
+	wg.Add(len(urls))
+
+	for _, url := range urls {
+		go func(url string) {
+			downloadPlaylist(url, downloadFunc)
+			wg.Done()
+		}(url)
+	}
+
+	wg.Wait()
+}
+
+func downloadPlaylist(url string, downloadFunc func(url []string)) {
 	service := youtubeService()
 	listId := playlistId(url)
 	ids := playlistItemsIds(listId, service)
@@ -104,13 +130,16 @@ func playlistItemsList(service *youtube.Service, part string, playlistId string,
 	return response
 }
 
-func startConcurrencyDownloadPlaylist(ids []string, downloadFunc func(url string)) {
+func startConcurrencyDownloadPlaylist(ids []string, downloadFunc func(url []string)) {
+	var wg sync.WaitGroup
 	wg.Add(len(ids))
 
 	for _, id := range ids {
-		go func(videoId string, downloadFunc func(url string)) {
+		go func(videoId string, downloadFunc func(url []string)) {
 			log.Println("Start download for videoId: ", videoId)
-			downloadFunc(youtubeUrl + videoId)
+			url := []string{youtubeUrl + videoId}
+
+			downloadFunc(url)
 			log.Println("Finish download for videoId: ", videoId)
 
 			wg.Done()

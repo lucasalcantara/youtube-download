@@ -39,7 +39,7 @@ func (s *stream) DownloadVideo(url, customOutput string) {
 }
 
 func (s *stream) removeSpecialCharacter(title string) string {
-	chars := []string{"]", "^", "\\", "/", "'", "[", ".", "(", ")", "-"}
+	chars := []string{"]", "^", "\\", "/", "'", "[", ".", "(", ")", "-", "?"}
 	r := strings.Join(chars, "")
 	re := regexp.MustCompile("[" + r + "]+")
 	title = re.ReplaceAllString(title, "")
@@ -47,12 +47,12 @@ func (s *stream) removeSpecialCharacter(title string) string {
 	return title
 }
 
-func (s *stream) DownloadMP3(url string) {
+func (s *stream) DownloadMP3(url, customOutput string) {
 	s.token = s.randToken()
-	customOutput := tmpPath + s.token
-	s.DownloadVideo(url, customOutput)
+	tmp := tmpPath + s.token
+	s.DownloadVideo(url, tmp)
 
-	err := s.parseVideoToMP3()
+	err := s.parseVideoToMP3(customOutput)
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -66,11 +66,12 @@ func (s *stream) randToken() string {
 	return fmt.Sprintf("%x", b)
 }
 
-func (s *stream) parseVideoToMP3() error {
+func (s *stream) parseVideoToMP3(customOutput string) error {
 	path := s.getFilePath()
 	fileName := s.getFile(path)
+	output := customOutput + fileName
 
-	_, err := exec.Command("ffmpeg", "-i", path, "-q:a", "0", "-map", "a", fileName).Output()
+	_, err := exec.Command("ffmpeg", "-i", path, "-q:a", "0", "-map", "a", output).Output()
 
 	return err
 }

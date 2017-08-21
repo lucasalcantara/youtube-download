@@ -35,6 +35,10 @@
           animation: spin 2s linear infinite;
         }
 
+        .glyphicon{
+            cursor: pointer;
+        }
+
         @-webkit-keyframes spin {
           0% { -webkit-transform: rotate(0deg); }
           100% { -webkit-transform: rotate(360deg); }
@@ -63,7 +67,14 @@
                     <div class="tab-content">
                         <div id="download" class="tab-pane fade in active">
                             <br>
-                            URL: <input type="text" id="url" name="url"/><br>
+                            <div id="add">
+                                <div>
+                                    URL: <input type="text" id="url" name="url" style="width: 80%;" />
+                                    <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>
+                                    <br>
+                                </div>
+                            </div>
+
                             Format: 
                             <input type="radio" name="format" value="MP4"> MP4
                             <input type="radio" name="format" value="MP3"> MP3<br><br>

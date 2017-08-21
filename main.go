@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"youtube"
 )
 
-type youtubeFunc func(url string)
+type youtubeFunc func(url []string)
 
 var (
 	youtubeFuncs map[string]map[string]youtubeFunc
@@ -31,11 +32,11 @@ func init() {
 func postHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		r.ParseForm()
-		url := r.Form.Get("url")
+		urls, _ := url.ParseQuery(r.Form.Get("urls"))
 		format := r.Form.Get("format")
 		option := strings.ToLower(r.Form.Get("option"))
 
-		youtubeFuncs[option][format](url)
+		youtubeFuncs[option][format](urls["url"])
 
 		fmt.Fprint(w, "POST done")
 	} else {
