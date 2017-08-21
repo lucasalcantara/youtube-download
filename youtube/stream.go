@@ -39,7 +39,7 @@ func (s *stream) DownloadVideo(url, customOutput string) {
 }
 
 func (s *stream) removeSpecialCharacter(title string) string {
-	chars := []string{"]", "^", "\\", "/", "'", "[", ".", "(", ")", "-", "?"}
+	chars := []string{"]", "^", "\\", "/", "'", "[", ".", "(", ")", "-", "?", "\""}
 	r := strings.Join(chars, "")
 	re := regexp.MustCompile("[" + r + "]+")
 	title = re.ReplaceAllString(title, "")
