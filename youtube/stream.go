@@ -16,6 +16,12 @@ const (
 	tmpPath = "youtube/tmp/"
 )
 
+func init() {
+	if _, err := os.Stat(tmpPath); os.IsNotExist(err) {
+		os.MkdirAll(tmpPath, os.ModePerm)
+	}
+}
+
 type stream struct {
 	token string
 	title string
