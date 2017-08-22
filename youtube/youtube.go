@@ -15,27 +15,35 @@ const (
 )
 
 func DownloadMP3(urls []string) {
-	stream := stream{}
-	concurrentlyDownloadStream(urls, "", stream.DownloadMP3)
+	concurrencyDownload(urls, "", callStreamDownloadMP3)
 }
 
 func DownloadVideo(urls []string) {
-	stream := stream{}
-	concurrentlyDownloadStream(urls, "", stream.DownloadVideo)
+	concurrencyDownload(urls, "", callStreamDownloadVideo)
 }
 
-func concurrentlyDownloadStream(urls []string, customOutput string, streamFunc func(string, string)) {
+func concurrencyDownload(urls []string, customOutput string, downloadFunc func(string, string)) {
 	var wg sync.WaitGroup
 	wg.Add(len(urls))
 
 	for _, url := range urls {
-		go func(url string, customOutput string, streamFunc func(string, string)) {
-			streamFunc(url, customOutput)
+		go func(url, customOutput string, downloadFunc func(string, string)) {
+			downloadFunc(url, customOutput)
 			wg.Done()
-		}(url, customOutput, streamFunc)
+		}(url, customOutput, downloadFunc)
 	}
 
 	wg.Wait()
+}
+
+func callStreamDownloadVideo(url, customOutput string) {
+	stream := stream{}
+	stream.DownloadVideo(url, "")
+}
+
+func callStreamDownloadMP3(url, customOutput string) {
+	stream := stream{}
+	stream.DownloadMP3(url, "")
 }
 
 func DownloadPlaylistVideos(urls []string) {
