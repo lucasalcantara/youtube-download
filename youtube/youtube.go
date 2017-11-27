@@ -6,61 +6,69 @@ import (
 	"strings"
 	"sync"
 
+	"common"
+	"drive"
+
 	"google.golang.org/api/youtube/v3"
 )
 
 const (
-	listPrefix = "list="
-	youtubeUrl = "https://www.youtube.com/watch?v="
+	listPrefix        = "list="
+	youtubeUrl        = "https://www.youtube.com/watch?v="
+	youtubeQuerySpace = "youtube-credentials.json"
 )
 
-func DownloadMP3(urls []string) {
-	concurrencyDownload(urls, "", callStreamDownloadMP3)
+func DownloadMP3(urls []string, upload bool) {
+	concurrencyDownload(urls, upload, callStreamDownloadMP3)
 }
 
-func DownloadVideo(urls []string) {
-	concurrencyDownload(urls, "", callStreamDownloadVideo)
+func DownloadVideo(urls []string, upload bool) {
+	concurrencyDownload(urls, upload, callStreamDownloadVideo)
 }
 
-func concurrencyDownload(urls []string, customOutput string, downloadFunc func(string, string)) {
+func concurrencyDownload(urls []string, upload bool, downloadFunc func(string) string) {
 	var wg sync.WaitGroup
 	wg.Add(len(urls))
 
 	for _, url := range urls {
-		go func(url, customOutput string, downloadFunc func(string, string)) {
-			downloadFunc(url, customOutput)
+		go func(url string, downloadFunc func(string) string) {
+			path := downloadFunc(url)
+			if upload {
+				drive.UploadFile(path)
+			}
+
 			wg.Done()
-		}(url, customOutput, downloadFunc)
+		}(url, downloadFunc)
 	}
 
 	wg.Wait()
 }
 
-func callStreamDownloadVideo(url, customOutput string) {
+func callStreamDownloadVideo(url string) string {
 	stream := stream{}
-	stream.DownloadVideo(url, "")
+	return stream.DownloadVideo(url)
 }
 
-func callStreamDownloadMP3(url, customOutput string) {
+func callStreamDownloadMP3(url string) string {
 	stream := stream{}
-	stream.DownloadMP3(url, "")
+	return stream.DownloadMP3(url)
 }
 
-func DownloadPlaylistVideos(urls []string) {
-	concurrentlyDownloadPlaylist(urls, DownloadVideo)
+func DownloadPlaylistVideos(urls []string, upload bool) {
+	concurrentlyDownloadPlaylist(urls, upload, DownloadVideo)
 }
 
-func DownloadPlaylistMusics(urls []string) {
-	concurrentlyDownloadPlaylist(urls, DownloadMP3)
+func DownloadPlaylistMusics(urls []string, upload bool) {
+	concurrentlyDownloadPlaylist(urls, upload, DownloadMP3)
 }
 
-func concurrentlyDownloadPlaylist(urls []string, downloadFunc func(urls []string)) {
+func concurrentlyDownloadPlaylist(urls []string, upload bool, downloadFunc func(urls []string, upload bool)) {
 	var wg sync.WaitGroup
 	wg.Add(len(urls))
 
 	for _, url := range urls {
 		go func(url string) {
-			downloadPlaylist(url, downloadFunc)
+			downloadPlaylist(url, upload, downloadFunc)
 			wg.Done()
 		}(url)
 	}
@@ -68,18 +76,23 @@ func concurrentlyDownloadPlaylist(urls []string, downloadFunc func(urls []string
 	wg.Wait()
 }
 
-func downloadPlaylist(url string, downloadFunc func(url []string)) {
+func downloadPlaylist(url string, upload bool, downloadFunc func(urls []string, upload bool)) {
 	service := youtubeService()
 	listId := playlistId(url)
 	ids := playlistItemsIds(listId, service)
+	urls := make([]string, 0)
 
-	startConcurrencyDownloadPlaylist(ids, downloadFunc)
+	for _, id := range ids {
+		urls = append(urls, youtubeUrl+id)
+	}
+
+	downloadFunc(urls, upload)
 
 	fmt.Println("Playlist Downloaded")
 }
 
 func youtubeService() *youtube.Service {
-	client := getClient()
+	client := common.GetClient(youtube.YoutubeReadonlyScope, youtubeQuerySpace)
 	service, err := youtube.New(client)
 	if err != nil {
 		log.Fatalf("Error to get the service.")
@@ -136,23 +149,4 @@ func playlistItemsList(service *youtube.Service, part string, playlistId string,
 	}
 
 	return response
-}
-
-func startConcurrencyDownloadPlaylist(ids []string, downloadFunc func(url []string)) {
-	var wg sync.WaitGroup
-	wg.Add(len(ids))
-
-	for _, id := range ids {
-		go func(videoId string, downloadFunc func(url []string)) {
-			log.Println("Start download for videoId: ", videoId)
-			url := []string{youtubeUrl + videoId}
-
-			downloadFunc(url)
-			log.Println("Finish download for videoId: ", videoId)
-
-			wg.Done()
-		}(id, downloadFunc)
-	}
-
-	wg.Wait()
 }

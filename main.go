@@ -1,15 +1,17 @@
 package main
 
 import (
+	//"drive"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"youtube"
 )
 
-type youtubeFunc func(url []string)
+type youtubeFunc func(url []string, upload bool)
 
 var (
 	youtubeFuncs map[string]map[string]youtubeFunc
@@ -34,9 +36,14 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		urls, _ := url.ParseQuery(r.Form.Get("urls"))
 		format := r.Form.Get("format")
+		upload, err := strconv.ParseBool(r.Form.Get("upload"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		option := strings.ToLower(r.Form.Get("option"))
 
-		youtubeFuncs[option][format](urls["url"])
+		youtubeFuncs[option][format](urls["url"], upload)
 
 		fmt.Fprint(w, "POST done")
 	} else {
@@ -45,6 +52,8 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	//drive.Print()
 
 	http.Handle("/", http.FileServer(http.Dir("web")))
 	http.HandleFunc("/post", postHandler)

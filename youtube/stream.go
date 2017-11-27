@@ -1,20 +1,20 @@
 package youtube
 
 import (
-	"crypto/rand"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
+	"path"
 	"regexp"
 	"strings"
 
 	"github.com/otium/ytdl"
 )
 
-const (
-	tmpPath = "youtube/tmp/"
-)
+var customOutput = ""
+
+const tmpPath = "youtube/tmp/"
 
 func init() {
 	if _, err := os.Stat(tmpPath); os.IsNotExist(err) {
@@ -23,25 +23,25 @@ func init() {
 }
 
 type stream struct {
-	token string
 	title string
 }
 
-func (s *stream) DownloadVideo(url, customOutput string) {
+func (s *stream) DownloadVideo(url string) string {
 	videoInfo, _ := ytdl.GetVideoInfo(url)
-	s.title = videoInfo.Title
 
 	videoInfo.Title = s.removeSpecialCharacter(videoInfo.Title)
+	s.title = videoInfo.Title
 
-	path := customOutput + videoInfo.Title + ".mp4"
+	p := customOutput + videoInfo.Title + ".mp4"
 
-	file, err := os.Create(path)
+	file, err := os.Create(p)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	defer file.Close()
 
 	videoInfo.Download(videoInfo.Formats.Best(ytdl.FormatAudioEncodingKey)[0], file)
+	return p
 }
 
 func (s *stream) removeSpecialCharacter(title string) string {
@@ -53,60 +53,53 @@ func (s *stream) removeSpecialCharacter(title string) string {
 	return title
 }
 
-func (s *stream) DownloadMP3(url, customOutput string) {
-	s.token = s.randToken()
-	tmp := tmpPath + s.token
-	s.DownloadVideo(url, tmp)
+func (s *stream) DownloadMP3(url string) string {
+	customOutput = tmpPath
+	s.DownloadVideo(url)
+	customOutput = ""
 
-	err := s.parseVideoToMP3(customOutput)
+	p, err := s.parseVideoToMP3()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	} else {
 		s.removeTmpFile()
 	}
+
+	return p
 }
 
-func (s *stream) randToken() string {
-	b := make([]byte, 8)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)
-}
+func (s *stream) parseVideoToMP3() (string, error) {
+	p := s.getFilePath()
+	fileName := s.getFileName(p)
 
-func (s *stream) parseVideoToMP3(customOutput string) error {
-	path := s.getFilePath()
-	fileName := s.getFile(path)
-	output := customOutput + fileName
+	_, err := exec.Command("ffmpeg", "-i", p, "-q:a", "0", "-map", "a", fileName).Output()
 
-	_, err := exec.Command("ffmpeg", "-i", path, "-q:a", "0", "-map", "a", output).Output()
-
-	return err
+	return fileName, err
 }
 
 func (s *stream) getFilePath() string {
-	path := ""
+	p := ""
+
 	files, _ := ioutil.ReadDir(tmpPath)
 	for _, f := range files {
-		if strings.Contains(f.Name(), s.token) {
-			path = tmpPath + f.Name()
+		if strings.Contains(f.Name(), s.title) {
+			p = tmpPath + f.Name()
 			break
 		}
 	}
 
-	return path
+	return p
 }
 
-func (s *stream) getFile(path string) string {
-	file := ""
-	values := strings.Split(path, s.token)
-	file = values[1]
-
-	return strings.Replace(file, "mp4", "mp3", -1)
+func (s *stream) getFileName(p string) string {
+	filename := path.Base(p)
+	return strings.Replace(filename, "mp4", "mp3", -1)
 }
 
 func (s *stream) removeTmpFile() {
-	path := s.getFilePath()
-	err := os.Remove(path)
+	p := s.getFilePath()
+	err := os.Remove(p)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }

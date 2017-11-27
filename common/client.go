@@ -1,16 +1,48 @@
-package youtube
+package common
 
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/user"
 	"path/filepath"
 
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
+
+var querySpace = ""
+
+const jsonPath = "common/client_secret.json"
+
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
+func GetClient(scope string, qs string) *http.Client {
+	querySpace = qs
+	ctx := context.Background()
+
+	clientSecretFile, err := ioutil.ReadFile(jsonPath)
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	// If modifying these scopes, delete your previously saved credentials
+	c, err := google.ConfigFromJSON(clientSecretFile, scope)
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+
+	token := getToken(c)
+
+	return c.Client(ctx, token)
+}
 
 // getClient uses a Context and Config to retrieve a Token
 // then generate a Client. It returns the generated Client.
@@ -38,7 +70,7 @@ func tokenCacheFile() (string, error) {
 	tokenCacheDir := filepath.Join(usr.HomeDir, ".credentials")
 	os.MkdirAll(tokenCacheDir, 0700)
 	return filepath.Join(tokenCacheDir,
-		url.QueryEscape("client_secret.json")), err
+		url.QueryEscape(querySpace)), err
 }
 
 // tokenFromFile retrieves a Token from a given file path.

@@ -8,7 +8,8 @@ $(document).ready(function(){
 			  url: "post",
 			  data: {
 			  	urls: $('input[name=url]').serialize(), 
-			  	format: $("input[name=format]:checked").val(), 
+			  	format: $("input[name=format]:checked").val(),
+			  	upload: $("input[name=upload]").is(':checked'), 
 			  	option: $(".nav.nav-tabs li[class=active] a ").text()
 			  },
 			  success: function(data){
