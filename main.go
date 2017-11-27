@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"drive"
 	"fmt"
 	"log"
 	"net/http"
@@ -52,8 +51,6 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
-	//drive.Print()
 
 	http.Handle("/", http.FileServer(http.Dir("web")))
 	http.HandleFunc("/post", postHandler)
