@@ -3,6 +3,7 @@ package youtube
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -12,11 +13,30 @@ import (
 	"google.golang.org/api/youtube/v3"
 )
 
+var (
+	download chan params
+	wg       sync.WaitGroup
+)
+
 const (
 	listPrefix        = "list="
 	youtubeUrl        = "https://www.youtube.com/watch?v="
 	youtubeQuerySpace = "youtube-credentials.json"
 )
+
+type params struct {
+	downloadFunc func(string) string
+	url          string
+	upload       bool
+}
+
+func init() {
+	download = make(chan params, 1)
+
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go run()
+	}
+}
 
 func DownloadMP3(urls []string, upload bool) {
 	concurrencyDownload(urls, upload, callStreamDownloadMP3)
@@ -26,19 +46,25 @@ func DownloadVideo(urls []string, upload bool) {
 	concurrencyDownload(urls, upload, callStreamDownloadVideo)
 }
 
-func concurrencyDownload(urls []string, upload bool, downloadFunc func(string) string) {
-	var wg sync.WaitGroup
-	wg.Add(len(urls))
-
-	for _, url := range urls {
-		go func(url string, downloadFunc func(string) string) {
-			path := downloadFunc(url)
-			if upload {
+func run() {
+	for {
+		select {
+		case param := <-download:
+			path := param.downloadFunc(param.url)
+			if param.upload {
 				drive.UploadFile(path)
 			}
 
 			wg.Done()
-		}(url, downloadFunc)
+		}
+	}
+}
+
+func concurrencyDownload(urls []string, upload bool, downloadFunc func(string) string) {
+	wg.Add(len(urls))
+
+	for _, url := range urls {
+		download <- params{downloadFunc, url, upload}
 	}
 
 	wg.Wait()
