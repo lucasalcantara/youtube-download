@@ -51,7 +51,7 @@ func run() {
 		select {
 		case param := <-download:
 			path := param.downloadFunc(param.url)
-			if param.upload {
+			if path != "" && param.upload {
 				drive.UploadFile(path)
 			}
 

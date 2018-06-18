@@ -27,7 +27,10 @@ type stream struct {
 }
 
 func (s *stream) DownloadVideo(url string) string {
-	videoInfo, _ := ytdl.GetVideoInfo(url)
+	videoInfo, err := ytdl.GetVideoInfo(url)
+	if err != nil {
+		return ""
+	}
 
 	videoInfo.Title = s.removeSpecialCharacter(videoInfo.Title)
 	s.title = videoInfo.Title
